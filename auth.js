@@ -13,8 +13,58 @@ const confirmModalButton$ = document.querySelector(
 const modalContainer$ = document.querySelector("[data-js='modal-container']");
 const logoutButton$ = document.querySelector("[data-js='logout-button']");
 const backButton$ = document.querySelector("[data-js='back-button']");
+const errorSpanEmail = document.querySelector("[data-js='error-span-email']");
+const errorSpanPassword = document.querySelector(
+  "[data-js='error-span-password']"
+);
 
 const form$ = document.querySelector("form");
+
+const mockUsers = [
+  {
+    id: 1,
+    email: "manager@mail.com",
+    password: "dmaloc",
+    name: "Manager",
+    lastName: "User",
+    accessLevel: "Gerente",
+  },
+  {
+    id: 2,
+    email: "dev@mail.com",
+    password: "password",
+    name: "Developer",
+    lastName: "User",
+    accessLevel: "Dev",
+  },
+  {
+    id: 3,
+    email: "client@mail.com",
+    password: "password",
+    name: "Client",
+    lastName: "User",
+    accessLevel: "Cliente",
+  },
+];
+
+function generateMockJWT(user) {
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = btoa(
+    JSON.stringify({
+      iss: "todo-api",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 10800, // 3 hours
+      sub: user.email,
+      accessLevel: user.accessLevel,
+    })
+  );
+  const signature = btoa("mock-signature");
+  return `${header}.${payload}.${signature}`;
+}
+
+function mockDelay(ms = 500) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 form$.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -37,7 +87,6 @@ if (logoutButton$) {
   logoutButton$.addEventListener("click", function () {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
-
     window.location.href = "index.html";
   });
 }
@@ -62,65 +111,59 @@ function checkUserAccess() {
 function parseJwt(token) {
   try {
     const base64Url = token.split(".")[1];
-
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join("")
     );
-
     return JSON.parse(jsonPayload);
   } catch (error) {
     console.error("Error parsing JWT:", error);
     return null;
   }
 }
-function login() {
+
+async function login() {
   const email = emailInput$.value;
   const password = passwordInput$.value;
 
   loginButton$.disabled = true;
 
-  fetch(`${API_URL}auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email,
-      password,
-    }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((responseData) => {
-      localStorage.setItem("token", responseData.token);
-      const decodedToken = parseJwt(responseData.token);
+  try {
+    await mockDelay();
 
-      const userData = {
-        accessLevel: decodedToken.accessLevel,
-      };
+    const user = mockUsers.find(
+      (element) => element.email === email && element.password === password
+    );
 
-      localStorage.setItem("userData", JSON.stringify(userData));
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
 
-      window.location.href = "todo.html";
-    })
-    .catch((error) => {
-      console.log(error.message);
-    })
-    .finally(() => {
-      loginButton$.disabled = false;
-    });
+    const token = generateMockJWT(user);
+
+    const responseData = { token };
+
+    localStorage.setItem("token", responseData.token);
+    const decodedToken = parseJwt(responseData.token);
+
+    const userData = {
+      accessLevel: decodedToken.accessLevel,
+    };
+
+    localStorage.setItem("userData", JSON.stringify(userData));
+    window.location.href = "todo.html";
+  } catch (error) {
+    console.log("Login error:", error.message);
+    alert("Login failed: " + error.message);
+  } finally {
+    loginButton$.disabled = false;
+  }
 }
 
-function register() {
+async function register() {
   const email = emailInput$.value;
   const password = passwordInput$.value;
   const name = firstName$.value;
@@ -129,36 +172,33 @@ function register() {
 
   registerButton$.disabled = true;
 
-  fetch(`${API_URL}users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-    body: JSON.stringify({
+  try {
+    await mockDelay();
+
+    const existingUser = mockUsers.find((u) => u.email === email);
+    if (existingUser) {
+      throw new Error("User already exists");
+    }
+
+    const newUser = {
+      id: mockUsers.length + 1,
       email,
       password,
       name,
       lastName,
       accessLevel,
-    }),
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}: ${resp.statusText}`);
-      }
-      return resp.json();
-    })
-    .then((json) => {
-      localStorage.setItem("userData", JSON.stringify(json));
-      modalContainer$.classList.add("show-modal");
-    })
-    .catch((error) => {
-      console.log(error.message);
-    })
-    .finally(() => {
-      registerButton$.disabled = false;
-    });
+    };
+
+    mockUsers.push(newUser);
+
+    localStorage.setItem("userData", JSON.stringify(newUser));
+    modalContainer$.classList.add("show-modal");
+  } catch (error) {
+    console.log("Registration error:", error.message);
+    alert("Registration failed: " + error.message);
+  } finally {
+    registerButton$.disabled = false;
+  }
 }
 
 if (confirmModalButton$)
@@ -166,5 +206,33 @@ if (confirmModalButton$)
     modalContainer$.classList.remove("show-modal");
     window.location.href = "index.html";
   });
-if (loginButton$) loginButton$.addEventListener("click", login);
+
+if (loginButton$)
+  loginButton$.addEventListener("click", () => {
+    const email = emailInput$.value.trim();
+    const password = passwordInput$.value.trim();
+
+    let hasError = false;
+
+    if (email === "") {
+      errorSpanEmail.textContent = "Email is required.";
+      errorSpanEmail.classList.add("error-span-visible");
+      hasError = true;
+    } else {
+      errorSpanEmail.classList.remove("error-span-visible");
+    }
+
+    if (password === "") {
+      errorSpanPassword.textContent = "Password is required.";
+      errorSpanPassword.classList.add("error-span-visible");
+      hasError = true;
+    } else {
+      errorSpanPassword.classList.remove("error-span-visible");
+    }
+
+    if (!hasError) {
+      login();
+    }
+  });
+
 if (registerButton$) registerButton$.addEventListener("click", register);

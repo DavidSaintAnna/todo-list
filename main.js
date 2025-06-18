@@ -17,12 +17,28 @@ const userButton$ = document.querySelector("[data-js='user-button']");
 const logoutButton$ = document.querySelector("[data-js='logout-button']");
 const form$ = document.querySelector("form");
 
+let mockTodos = [
+  { id: 1, description: "preciso estudar mais", done: false },
+  { id: 2, description: "preciso parar de perder tempo", done: true },
+  { id: 3, description: "ficarei sozinho", done: false },
+  { id: 4, description: "preciso de dinheiro", done: false },
+  { id: 5, description: "preciso ter fé", done: true },
+];
+
+let nextTodoId = 6;
+
+// Mock API delay
+function mockDelay(ms = 300) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function checkTokenAuthentication() {
   if (!token) {
     window.location.href = "index.html";
     return;
   }
 }
+
 document.addEventListener("DOMContentLoaded", function () {
   if (window.location.href.includes("todo.html")) {
     checkTokenAuthentication();
@@ -50,7 +66,6 @@ function checkUserPermissions() {
 logoutButton$.addEventListener("click", function () {
   localStorage.removeItem("token");
   localStorage.removeItem("userData");
-
   window.location.href = "index.html";
 });
 
@@ -68,13 +83,11 @@ const errorSpanSearch = document.createElement("span");
 errorSpanSearch.classList.add("error-span-content");
 errorSpan$.parentElement.parentElement.appendChild(errorSpanSearch);
 
-const todos = JSON.parse(localStorage.getItem("todos")) || [];
-
 /******* FUNÇÃO PARA HABILITAR CRIAÇÃO DO tODO ********************************************************************/
 inputText$.addEventListener("input", () => {
   const value = inputText$.value.trim();
   createItemBtn$.disabled = value.length < 5 || value.length > 100;
-  searchWord$.disabled = todos.length === 0;
+  searchWord$.disabled = mockTodos.length === 0;
 
   if (value.length < 5) {
     errorSpan$.textContent = "this field must have at least 5 characters!";
@@ -91,7 +104,6 @@ inputText$.addEventListener("input", () => {
 inputText$.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     const value = inputText$.value.trim();
-
     if (value.length >= 5) {
       createItemBtn$.click();
     }
@@ -232,70 +244,43 @@ function createTodoTemplate(todo) {
   return li;
 }
 
-function getTodos() {
-  fetch(`${API_URL}task`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}: ${resp.statusText}`);
-      }
-      return resp.json();
-    })
-    .then((json) => {
-      console.log("API Response:", json);
-      const getTodos = json;
-      createTodosinView(getTodos);
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
+async function getTodos() {
+  try {
+    await mockDelay();
+    console.log("Mock API Response:", mockTodos);
+    createTodosinView(mockTodos);
+  } catch (error) {
+    console.log("Get todos error:", error.message);
+  }
 }
 
-function createTodo(description) {
-  fetch(`${API_URL}task`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      description,
-    }),
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}: ${resp.statusText}`);
-      }
-      getTodos();
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
+async function createTodo(description) {
+  try {
+    await mockDelay();
+
+    const newTodo = {
+      id: nextTodoId++,
+      description: description,
+      done: false,
+    };
+
+    mockTodos.push(newTodo);
+    getTodos(); // Refresh the view
+  } catch (error) {
+    console.log("Create todo error:", error.message);
+  }
 }
 
-function updateStatusTodo(todoId, newStatus) {
-  fetch(`${API_URL}task/${todoId}/done`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      done: newStatus,
-    }),
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}:${resp.statusText}`);
-      }
-      return resp.json();
-    })
-    .then((updatedTodo) => {
+// Mock updateStatusTodo function
+async function updateStatusTodo(todoId, newStatus) {
+  try {
+    await mockDelay();
+
+    const todoIndex = mockTodos.findIndex((todo) => todo.id == todoId);
+    if (todoIndex !== -1) {
+      mockTodos[todoIndex].done = newStatus;
+      const updatedTodo = mockTodos[todoIndex];
+
       const todoElement = document.getElementById(todoId);
       if (todoElement) {
         const statusIcon = todoElement.querySelector(".fa");
@@ -305,64 +290,52 @@ function updateStatusTodo(todoId, newStatus) {
         );
         if (updatedTodo.done) {
           todoElement.classList.add("task-completed");
+          showToast();
         } else {
           todoElement.classList.remove("task-completed");
         }
       }
-      showToast();
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
+    }
+  } catch (error) {
+    console.log("Status update error:", error.message);
+  }
 }
 
-function deleteTodo(todoId) {
-  fetch(`${API_URL}task/${todoId}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}: ${resp.statusText}`);
-      }
+// Mock deleteTodo function
+async function deleteTodo(todoId) {
+  try {
+    await mockDelay();
+
+    const todoIndex = mockTodos.findIndex((todo) => todo.id == todoId);
+    if (todoIndex !== -1) {
+      mockTodos.splice(todoIndex, 1);
       const todoElement = document.getElementById(todoId);
       if (todoElement) {
         todoElement.remove();
       }
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
+    }
+  } catch (error) {
+    console.log("Delete todo error:", error.message);
+  }
 }
 
-function updateTodoDescription(todoId, newDescription) {
-  fetch(`${API_URL}task/${todoId}/description`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      description: newDescription,
-    }),
-  })
-    .then((resp) => {
-      if (!resp.ok) {
-        throw new Error(`Error ${resp.status}: ${resp.statusText}`);
-      }
-      return resp.json();
-    })
-    .catch((error) => {
-      console.log(error.message);
-    });
+// Mock updateTodoDescription function
+async function updateTodoDescription(todoId, newDescription) {
+  try {
+    await mockDelay();
+
+    const todoIndex = mockTodos.findIndex((todo) => todo.id == todoId);
+    if (todoIndex !== -1) {
+      mockTodos[todoIndex].description = newDescription;
+    }
+  } catch (error) {
+    console.log("Update description error:", error.message);
+  }
 }
 
-function createTodosinView(todo) {
+function createTodosinView(todos) {
   listOfTodo$.innerHTML = "";
-  todo.forEach((todo) => {
+  todos.forEach((todo) => {
     const todoElement = createTodoTemplate(todo);
     listOfTodo$.appendChild(todoElement);
   });
@@ -375,24 +348,22 @@ let btnFilterValue = "all";
 
 function toggleFilterButton(clickedBtn) {
   activeFilterBtn.classList.remove("btn-filter-active");
-
   clickedBtn.classList.add("btn-filter-active");
-
   activeFilterBtn = clickedBtn;
 }
 
 function applyFilters() {
   const searchValue = inputText$.value.trim().toLowerCase();
-  let filteredTodos = todos;
+  let filteredTodos = mockTodos;
 
   filteredTodos = filteredTodos.filter((todo) =>
     todo.description.toLowerCase().includes(searchValue)
   );
 
   if (btnFilterValue === "done") {
-    filteredTodos = filteredTodos.filter((todo) => todo.checked === true);
+    filteredTodos = filteredTodos.filter((todo) => todo.done === true);
   } else if (btnFilterValue === "pending") {
-    filteredTodos = filteredTodos.filter((todo) => todo.checked === false);
+    filteredTodos = filteredTodos.filter((todo) => todo.done === false);
   }
 
   listOfTodo$.innerHTML = "";
@@ -405,31 +376,30 @@ function applyFilters() {
     errorSpanSearch.classList.remove("error-span-visible");
   }
 }
+
 searchWord$.addEventListener("click", applyFilters);
 
 btnFilterAll$.addEventListener("click", () => {
   btnFilterValue = "all";
   toggleFilterButton(btnFilterAll$);
-  console.log(btnFilterValue);
+  getTodos();
 });
 
 btnFilterPending$.addEventListener("click", () => {
   btnFilterValue = "pending";
   toggleFilterButton(btnFilterPending$);
-  console.log(btnFilterValue);
+  applyFilters();
 });
 
 btnFilterDone$.addEventListener("click", () => {
   btnFilterValue = "done";
   toggleFilterButton(btnFilterDone$);
-  console.log(btnFilterValue);
+  applyFilters();
 });
 
 function showToast() {
   const toast = document.querySelector(".toast");
-
   toast.classList.add("show-toast");
-
   setTimeout(() => {
     toast.classList.remove("show-toast");
   }, 2000);
