@@ -1,21 +1,27 @@
 const API_URL = "https://delpe-todo.onrender.com/";
 
-const loginButton$ = document.querySelector("[data-js='login-button']");
-const emailInput$ = document.querySelector("[data-js='email']");
-const passwordInput$ = document.querySelector("[data-js='password']");
-const firstName$ = document.querySelector("[data-js='first-name']");
-const lastName$ = document.querySelector("[data-js='last-name']");
-const registerButton$ = document.querySelector("[data-js='register-button']");
-const selectElement$ = document.querySelector('[data-js="role"]');
-const confirmModalButton$ = document.querySelector(
-  "[data-js='confirm-button']"
+const loginButton$ = document.querySelector("[data-testid='login-button']");
+const emailInput$ = document.querySelector("[data-testid='email']");
+const passwordInput$ = document.querySelector("[data-testid='password']");
+const firstName$ = document.querySelector("[data-testid='first-name']");
+const lastName$ = document.querySelector("[data-testid='last-name']");
+const registerButton$ = document.querySelector(
+  "[data-testid='register-button']"
 );
-const modalContainer$ = document.querySelector("[data-js='modal-container']");
-const logoutButton$ = document.querySelector("[data-js='logout-button']");
-const backButton$ = document.querySelector("[data-js='back-button']");
-const errorSpanEmail = document.querySelector("[data-js='error-span-email']");
+const selectElement$ = document.querySelector("[data-testid='role']");
+const confirmModalButton$ = document.querySelector(
+  "[data-testid='confirm-button']"
+);
+const modalContainer$ = document.querySelector(
+  "[data-testid='modal-container']"
+);
+const logoutButton$ = document.querySelector("[data-testid='logout-button']");
+const backButton$ = document.querySelector("[data-testid='back-button']");
+const errorSpanEmail = document.querySelector(
+  "[data-testid='error-span-email']"
+);
 const errorSpanPassword = document.querySelector(
-  "[data-js='error-span-password']"
+  "[data-testid='error-span-password']"
 );
 
 const form$ = document.querySelector("form");
