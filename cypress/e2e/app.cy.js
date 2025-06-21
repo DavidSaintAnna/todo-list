@@ -83,4 +83,153 @@ describe("Gerente access level", () => {
     cy.get("#create-item").should("not.be.disabled").click();
     cy.get(".todo-item").should("contain", "Test task for manager");
   });
+  it("should allow task status changes", () => {
+    cy.get(".todo-item").first().find(".fa").click();
+    cy.get(".todo-item").first().should("have.class", "task-completed");
+  });
+  it("should allow task editing", () => {
+    cy.get(".todo-item").first().find(".fa-pen").click();
+    cy.get(".todo-item")
+      .first()
+      .find(".todo-item-content")
+      .clear()
+      .type("Edited task content");
+    cy.get(".todo-item").first().find(".fa-check").click();
+
+    cy.get(".todo-item").first().should("contain", "Edited task content");
+  });
+  it("should allow task deletion", () => {
+    cy.get("#input-text").type("Task to delete");
+    cy.get("#create-item").click();
+    cy.get(".todo-item").first().find(".fa-trash").click();
+    cy.get("#modal").should("be.visible");
+    cy.get("#confirm-delete").click();
+    cy.get(".todo-item").should("not.contain", "Task to delete");
+  });
+
+  it("should navigate to user registration page", () => {
+    cy.get('[data-js="user-button"]').click();
+    cy.url().should("include", "register.html");
+    cy.get('[data-testid="first-name"]').type("João");
+    cy.get('[data-testid="last-name"]').type("Silva");
+    cy.get('[data-testid="email"]').type("joao.silva@example.com");
+    cy.get('[data-testid="password"]').type("password123");
+    cy.get('[data-testid="role"]').select("DEV");
+    cy.get('[data-testid="register-button"]').click();
+    cy.get('[data-testid="modal-container"]').should(
+      "have.class",
+      "show-modal"
+    );
+    cy.get(".modal h2").should("contain", "Success");
+    cy.get(".modal p").should(
+      "contain",
+      "You have sucessfully created a user!"
+    );
+    cy.get('[data-testid="confirm-button"]').click();
+    cy.url().should("include", "index.html");
+  });
+  it("should filter tasks by status", () => {
+    cy.get("#all").click();
+    cy.get("#all").should("have.class", "btn-filter-active");
+
+    cy.get("#pending").click();
+    cy.get("#pending").should("have.class", "btn-filter-active");
+
+    cy.get("#done").click();
+    cy.get("#done").should("have.class", "btn-filter-active");
+  });
+
+  it("should search tasks", () => {
+    cy.get("#input-text").type("estudar");
+    cy.get("#search-word").click();
+
+    cy.get(".todo-item").should("contain", "estudar");
+  });
+});
+describe("DEV access level", () => {
+  beforeEach(() => {
+    cy.visit("http://localhost:5173/");
+    cy.get("[data-testid='email']").type("dev@mail.com");
+    cy.get("[data-testid='password']").type("password");
+    cy.get("[data-testid='login-button']").click();
+    cy.url().should("include", "todo.html");
+  });
+
+  it("should hide user creation button for dev", () => {
+    cy.get('[data-js="user-button"]').should("have.class", "hide");
+  });
+
+  it("should disable task creation for dev", () => {
+    cy.get("#input-text").should("be.disabled");
+    cy.get("#input-text").should("have.class", "not-allowed");
+    cy.get("#create-item").should("be.disabled");
+  });
+
+  it("should allow task status changes for dev", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa")
+      .should("not.have.class", "not-allowed");
+    cy.get(".todo-item").first().find(".fa").click();
+    cy.get(".todo-item").first().should("have.class", "task-completed");
+  });
+
+  it("should disable task editing for dev", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa-pen")
+      .should("have.class", "not-allowed");
+  });
+
+  it("should disable task deletion for dev", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa-trash")
+      .should("have.class", "not-allowed");
+  });
+});
+describe("client access level", () => {
+  beforeEach(() => {
+    cy.visit("http://localhost:5173/");
+    cy.get("[data-testid='email']").type("client@mail.com");
+    cy.get("[data-testid='password']").type("password");
+    cy.get("[data-testid='login-button']").click();
+    cy.url().should("include", "todo.html");
+  });
+
+  it("should hide user creation button for client", () => {
+    cy.get('[data-js="user-button"]').should("have.class", "hide");
+  });
+
+  it("should disable task creation for client", () => {
+    cy.get("#input-text").should("be.disabled");
+    cy.get("#input-text").should("have.class", "not-allowed");
+    cy.get("#create-item").should("be.disabled");
+  });
+
+  it("should disable task status changes for client", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa")
+      .should("have.class", "not-allowed");
+  });
+
+  it("should disable task editing for client", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa-pen")
+      .should("have.class", "not-allowed");
+  });
+
+  it("should disable task deletion for client", () => {
+    cy.get(".todo-item")
+      .first()
+      .find(".fa-trash")
+      .should("have.class", "not-allowed");
+  });
+
+  it("should only allow viewing tasks", () => {
+    cy.get(".todo-item").should("exist");
+    cy.get("#content").should("be.visible");
+  });
 });
