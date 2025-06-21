@@ -38,10 +38,10 @@
       <i class="fa-solid fa-list"></i>
       <h1>Create Account</h1>
       <div class="buttons">
-        <button type="button" data-js="back-button" class="back-button">
+        <button type="button" data-testid="back-button" class="back-button">
           <span class="material-symbols-outlined"> arrow_back </span>
         </button>
-        <button type="button" data-js="logout-button" class="logout-button">
+        <button type="button" data-testid="logout-button" class="logout-button">
           <span class="material-symbols-outlined"> logout </span>
         </button>
       </div>
@@ -53,7 +53,7 @@
             type="text"
             placeholder="Enter firstname"
             name="firstName"
-            data-js="first-name"
+            data-testid="first-name"
             required
           />
           <label for="lastName">LastName</label>
@@ -61,11 +61,11 @@
             type="text"
             placeholder="Enter lastname"
             name="lastName"
-            data-js="last-name"
+            data-testid="last-name"
             required
           />
           <label for="role">Role</label>
-          <select data-js="role" required>
+          <select data-testid="role" required>
             <option value="" disabled selected>Select Role</option>
             <option value="GERENTE">Gerente</option>
             <option value="DEV">Dev</option>
@@ -77,7 +77,7 @@
             type="email"
             placeholder="Enter email"
             name="email"
-            data-js="email"
+            data-testid="email"
             required
           />
           <label for="password">Password</label>
@@ -85,18 +85,20 @@
             type="password"
             placeholder="Enter password"
             name="password"
-            data-js="password"
+            data-testid="password"
             required
           />
 
-          <button type="submit" data-js="register-button">Register</button>
+          <button type="submit" data-testid="register-button">Register</button>
         </div>
-        <div class="modal-container" data-js="modal-container">
+        <div class="modal-container" data-testid="modal-container">
           <div class="modal">
             <i class="fa-regular fa-circle-check"></i>
             <h2>Success</h2>
             <p>You have sucessfully created a user!</p>
-            <button data-js="confirm-button" class="confirm-button">OK</button>
+            <button data-testid="confirm-button" class="confirm-button">
+              OK
+            </button>
           </div>
         </div>
         <footer>
