@@ -17,10 +17,10 @@ const modalContainer$ = document.querySelector(
 );
 const logoutButton$ = document.querySelector("[data-testid='logout-button']");
 const backButton$ = document.querySelector("[data-testid='back-button']");
-const errorSpanEmail = document.querySelector(
+const errorSpanEmail$ = document.querySelector(
   "[data-testid='error-span-email']"
 );
-const errorSpanPassword = document.querySelector(
+const errorSpanPassword$ = document.querySelector(
   "[data-testid='error-span-password']"
 );
 
@@ -213,32 +213,41 @@ if (confirmModalButton$)
     window.location.href = "index.html";
   });
 
+function checkLoginIsValid() {
+  const email = emailInput$?.value?.trim();
+  const password = passwordInput$?.value?.trim();
+
+  const errorClassName = "error-span-visible";
+
+  errorSpanEmail$.classList.remove(errorClassName);
+  errorSpanPassword$.classList.remove(errorClassName);
+
+  if (!email && !password) {
+    errorSpanEmail$.textContent = "Email is required.";
+    errorSpanEmail$.classList.add(errorClassName);
+    errorSpanPassword$.textContent = "Password is required.";
+    errorSpanPassword$.classList.add(errorClassName);
+    return false;
+  }
+  if (!email) {
+    errorSpanEmail$.textContent = "Email is required.";
+    errorSpanEmail$.classList.add(errorClassName);
+    return false;
+  }
+
+  if (!password) {
+    errorSpanPassword$.textContent = "Password is required.";
+    errorSpanPassword$.classList.add(errorClassName);
+    return false;
+  }
+
+  return true;
+}
+
 if (loginButton$)
   loginButton$.addEventListener("click", () => {
-    const email = emailInput$.value.trim();
-    const password = passwordInput$.value.trim();
-
-    let hasError = false;
-
-    if (email === "") {
-      errorSpanEmail.textContent = "Email is required.";
-      errorSpanEmail.classList.add("error-span-visible");
-      hasError = true;
-    } else {
-      errorSpanEmail.classList.remove("error-span-visible");
-    }
-
-    if (password === "") {
-      errorSpanPassword.textContent = "Password is required.";
-      errorSpanPassword.classList.add("error-span-visible");
-      hasError = true;
-    } else {
-      errorSpanPassword.classList.remove("error-span-visible");
-    }
-
-    if (!hasError) {
-      login();
-    }
+    if (!checkLoginIsValid()) return;
+    login();
   });
 
 if (registerButton$) registerButton$.addEventListener("click", register);
