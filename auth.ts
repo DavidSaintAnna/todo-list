@@ -1,31 +1,55 @@
-const API_URL = "https://delpe-todo.onrender.com/";
+// const API_URL = "https://delpe-todo.onrender.com/";
 
-const loginButton$ = document.querySelector("[data-testid='login-button']");
-const emailInput$ = document.querySelector("[data-testid='email']");
-const passwordInput$ = document.querySelector("[data-testid='password']");
-const firstName$ = document.querySelector("[data-testid='first-name']");
-const lastName$ = document.querySelector("[data-testid='last-name']");
+const loginButton$ = document.querySelector(
+  "[data-testid='login-button']"
+) as HTMLButtonElement;
+const emailInput$ = document.querySelector(
+  "[data-testid='email']"
+) as HTMLInputElement;
+const passwordInput$ = document.querySelector(
+  "[data-testid='password']"
+) as HTMLInputElement;
+const firstName$ = document.querySelector(
+  "[data-testid='first-name']"
+) as HTMLInputElement;
+const lastName$ = document.querySelector(
+  "[data-testid='last-name']"
+) as HTMLInputElement;
 const registerButton$ = document.querySelector(
   "[data-testid='register-button']"
-);
-const selectElement$ = document.querySelector("[data-testid='role']");
+) as HTMLButtonElement;
+const selectElement$ = document.querySelector(
+  "[data-testid='role']"
+) as HTMLSelectElement;
 const confirmModalButton$ = document.querySelector(
   "[data-testid='confirm-button']"
-);
-const modalContainer$ = document.querySelector(
+) as HTMLButtonElement;
+const modalContainerAuth$ = document.querySelector(
   "[data-testid='modal-container']"
-);
-const logoutButton$ = document.querySelector("[data-testid='logout-button']");
-const backButton$ = document.querySelector("[data-testid='back-button']");
-const errorSpanEmail = document.querySelector(
+) as HTMLDivElement;
+const logoutButtonAuth$ = document.querySelector(
+  "[data-testid='logout-button']"
+) as HTMLButtonElement;
+const backButton$ = document.querySelector(
+  "[data-testid='back-button']"
+) as HTMLButtonElement;
+const errorSpanEmail$ = document.querySelector(
   "[data-testid='error-span-email']"
-);
-const errorSpanPassword = document.querySelector(
+) as HTMLSpanElement;
+const errorSpanPassword$ = document.querySelector(
   "[data-testid='error-span-password']"
-);
+) as HTMLSpanElement;
 
-const form$ = document.querySelector("form");
+const formAuth$ = document.querySelector("form") as HTMLFormElement;
 
+type User = {
+  id: number;
+  email: string;
+  password: string;
+  name: string;
+  lastName: string;
+  accessLevel?: string;
+};
 const mockUsers = [
   {
     id: 1,
@@ -53,13 +77,13 @@ const mockUsers = [
   },
 ];
 
-function generateMockJWT(user) {
+function generateMockJWT(user: User) {
   const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = btoa(
     JSON.stringify({
       iss: "todo-api",
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 10800, // 3 hours
+      exp: Math.floor(Date.now() / 1000) + 10800,
       sub: user.email,
       accessLevel: user.accessLevel,
     })
@@ -68,17 +92,17 @@ function generateMockJWT(user) {
   return `${header}.${payload}.${signature}`;
 }
 
-function mockDelay(ms = 500) {
+function mockDelayAuth(ms = 500) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-form$.addEventListener("submit", (event) => {
+formAuth$.addEventListener("submit", (event) => {
   event.preventDefault();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
   if (window.location.href.includes("register.html")) {
-    checkTokenAuthentication();
+    checkTokenAuthenticationAuth();
     checkUserAccess();
   }
 });
@@ -89,15 +113,15 @@ if (backButton$) {
   });
 }
 
-if (logoutButton$) {
-  logoutButton$.addEventListener("click", function () {
+if (logoutButtonAuth$) {
+  logoutButtonAuth$.addEventListener("click", function () {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
     window.location.href = "index.html";
   });
 }
 
-function checkTokenAuthentication() {
+function checkTokenAuthenticationAuth() {
   const token = localStorage.getItem("token");
   if (!token) {
     window.location.href = "index.html";
@@ -107,14 +131,15 @@ function checkTokenAuthentication() {
 
 function checkUserAccess() {
   const userData = localStorage.getItem("userData");
+  if (!userData) return;
+
   const user = JSON.parse(userData);
-  if (user.accessLevel !== "Gerente") {
+  if (user?.accessLevel !== "Gerente") {
     window.location.href = "todo.html";
-    return;
   }
 }
 
-function parseJwt(token) {
+function parseJwt(token: string) {
   try {
     const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -138,7 +163,7 @@ async function login() {
   loginButton$.disabled = true;
 
   try {
-    await mockDelay();
+    await mockDelayAuth();
 
     const user = mockUsers.find(
       (element) => element.email === email && element.password === password
@@ -162,8 +187,10 @@ async function login() {
     localStorage.setItem("userData", JSON.stringify(userData));
     window.location.href = "todo.html";
   } catch (error) {
-    console.log("Login error:", error.message);
-    alert("Login failed: " + error.message);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.log("Login error:", errorMessage);
+    alert("Login error: " + errorMessage);
   } finally {
     loginButton$.disabled = false;
   }
@@ -179,7 +206,7 @@ async function register() {
   registerButton$.disabled = true;
 
   try {
-    await mockDelay();
+    await mockDelayAuth();
 
     const existingUser = mockUsers.find((u) => u.email === email);
     if (existingUser) {
@@ -198,10 +225,12 @@ async function register() {
     mockUsers.push(newUser);
 
     localStorage.setItem("userData", JSON.stringify(newUser));
-    modalContainer$.classList.add("show-modal");
+    modalContainerAuth$.classList.add("show-modal");
   } catch (error) {
-    console.log("Registration error:", error.message);
-    alert("Registration failed: " + error.message);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    console.log("Registration error:", errorMessage);
+    alert("Registration failed: " + errorMessage);
   } finally {
     registerButton$.disabled = false;
   }
@@ -209,34 +238,35 @@ async function register() {
 
 if (confirmModalButton$)
   confirmModalButton$.addEventListener("click", () => {
-    modalContainer$.classList.remove("show-modal");
+    modalContainerAuth$.classList.remove("show-modal");
     window.location.href = "index.html";
   });
 
+function validateUserInfo(email: string, password: string): boolean {
+  if (email === "") {
+    errorSpanEmail$.textContent = "Email is required.";
+    errorSpanEmail$.classList.add("error-span-visible");
+    return false;
+  }
+
+  if (password === "") {
+    errorSpanPassword$.textContent = "Password is required.";
+    errorSpanPassword$.classList.add("error-span-visible");
+    return false;
+  }
+  errorSpanPassword$.classList.remove("error-span-visible");
+  errorSpanEmail$.classList.remove("error-span-visible");
+  return true;
+}
+
 if (loginButton$)
   loginButton$.addEventListener("click", () => {
-    const email = emailInput$.value.trim();
-    const password = passwordInput$.value.trim();
+    const email = emailInput$?.value?.trim();
+    const password = passwordInput$?.value?.trim();
 
-    let hasError = false;
+    const valid = validateUserInfo(email, password);
 
-    if (email === "") {
-      errorSpanEmail.textContent = "Email is required.";
-      errorSpanEmail.classList.add("error-span-visible");
-      hasError = true;
-    } else {
-      errorSpanEmail.classList.remove("error-span-visible");
-    }
-
-    if (password === "") {
-      errorSpanPassword.textContent = "Password is required.";
-      errorSpanPassword.classList.add("error-span-visible");
-      hasError = true;
-    } else {
-      errorSpanPassword.classList.remove("error-span-visible");
-    }
-
-    if (!hasError) {
+    if (valid) {
       login();
     }
   });

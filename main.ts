@@ -1,22 +1,39 @@
 /******* CONSTANTES ***************************************************************************/
-const API_URL = "https://delpe-todo.onrender.com/";
+// const API_URL = "https://delpe-todo.onrender.com/";
 const token = localStorage.getItem("token");
 
-const inputText$ = document.getElementById("input-text");
-const createItemBtn$ = document.getElementById("create-item");
-const searchWord$ = document.getElementById("search-word");
-const listOfTodo$ = document.getElementById("content");
-const modalContainer$ = document.getElementById("modal");
-const cancelDelete$ = document.getElementById("cancel-delete");
-const btnFilterAll$ = document.getElementById("all");
-const btnFilterPending$ = document.getElementById("pending");
-const btnFilterDone$ = document.getElementById("done");
-const confirmDelete$ = document.getElementById("confirm-delete");
-const errorSpan$ = document.getElementById("error-span");
-const userButton$ = document.querySelector("[data-js='user-button']");
-const logoutButton$ = document.querySelector("[data-js='logout-button']");
-const form$ = document.querySelector("form");
+const inputText$ = document.getElementById("input-text") as HTMLInputElement;
+const createItemBtn$ = document.getElementById(
+  "create-item"
+) as HTMLButtonElement;
+const searchWord$ = document.getElementById("search-word") as HTMLButtonElement;
+const listOfTodo$ = document.getElementById("content") as HTMLUListElement;
+const modalContainer$ = document.getElementById("modal") as HTMLDivElement;
+const cancelDelete$ = document.getElementById(
+  "cancel-delete"
+) as HTMLButtonElement;
+const btnFilterAll$ = document.getElementById("all") as HTMLButtonElement;
+const btnFilterPending$ = document.getElementById(
+  "pending"
+) as HTMLButtonElement;
+const btnFilterDone$ = document.getElementById("done") as HTMLButtonElement;
+const confirmDelete$ = document.getElementById(
+  "confirm-delete"
+) as HTMLButtonElement;
+const errorSpan$ = document.getElementById("error-span") as HTMLSpanElement;
+const userButton$ = document.querySelector(
+  "[data-js='user-button']"
+) as HTMLButtonElement;
+const logoutButton$ = document.querySelector(
+  "[data-js='logout-button']"
+) as HTMLButtonElement;
+const form$ = document.querySelector("form") as HTMLFormElement;
 
+type Todo = {
+  id: number;
+  description: string;
+  done: boolean;
+};
 let mockTodos = [
   { id: 1, description: "preciso estudar mais", done: false },
   { id: 2, description: "preciso parar de perder tempo", done: true },
@@ -47,6 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function getUserRole() {
   const userData = localStorage.getItem("userData");
+  if (!userData) return;
   const user = JSON.parse(userData);
   return user.accessLevel;
 }
@@ -81,7 +99,7 @@ errorSpan$.classList.add("error-span");
 
 const errorSpanSearch = document.createElement("span");
 errorSpanSearch.classList.add("error-span-content");
-errorSpan$.parentElement.parentElement.appendChild(errorSpanSearch);
+errorSpan$?.parentElement?.parentElement?.appendChild(errorSpanSearch);
 
 /******* FUNÇÃO PARA HABILITAR CRIAÇÃO DO tODO ********************************************************************/
 inputText$.addEventListener("input", () => {
@@ -126,11 +144,11 @@ createItemBtn$.addEventListener("click", () => {
   createItemBtn$.disabled = true;
 });
 
-function createTodoTemplate(todo) {
+function createTodoTemplate(todo: Todo) {
   const userRole = getUserRole();
   const li = document.createElement("li");
   li.classList.add("todo-item");
-  li.setAttribute("id", todo.id);
+  li.setAttribute("id", todo.id.toString());
   if (todo.done) {
     li.classList.add("task-completed");
   }
@@ -176,13 +194,17 @@ function createTodoTemplate(todo) {
     });
   }
 
-  let todoToDelete = null;
-
+  let todoToDelete: HTMLElement | null = null;
   /******* MODAL E DELETE DOS TODOS***************************************************************************/
 
   if (userRole === "Gerente") {
     trashIcon.addEventListener("click", (event) => {
-      todoToDelete = event.target.parentElement.parentElement;
+      const target = event.currentTarget as HTMLElement | null;
+      if (!target) return;
+
+      const todoElement = target.closest("li");
+      if (!todoElement) return;
+      todoToDelete = todoElement;
       modalContainer$.style.display = "flex";
     });
 
@@ -194,7 +216,7 @@ function createTodoTemplate(todo) {
     confirmDelete$.addEventListener("click", async () => {
       if (todoToDelete) {
         const todoId = todoToDelete.id;
-        deleteTodo(todoId);
+        deleteTodo(Number(todoId));
         modalContainer$.style.display = "none";
         todoToDelete = null;
       }
@@ -209,24 +231,43 @@ function createTodoTemplate(todo) {
 
     //icone edição
     penIcon.addEventListener("click", (event) => {
-      const todoElement = event.target.parentElement.parentElement;
-      const iconPen = todoElement.querySelector(".fa-pen");
-      const iconCheck = todoElement.querySelector(".fa-check");
-      const todoContent = todoElement.querySelector(".todo-item-content");
+      const target = event.currentTarget as HTMLElement | null;
+      if (!target) return;
+
+      const todoElement = target.closest("li");
+      if (!todoElement) return;
+
+      const iconPen = todoElement.querySelector(
+        ".fa-pen"
+      ) as HTMLElement | null;
+      const iconCheck = todoElement.querySelector(
+        ".fa-check"
+      ) as HTMLElement | null;
+      const todoContent = todoElement.querySelector(
+        ".todo-item-content"
+      ) as HTMLElement | null;
+
+      if (!todoContent) return;
+
       if (iconPen) {
         iconPen.classList.remove("fa-pen");
         iconPen.classList.add("fa-check");
-        todoContent.contentEditable = true;
+        todoContent.contentEditable = "true";
         todoContent.focus();
         todoContent.classList.add("editing");
       } else {
-        const newValue = todoContent.textContent.trim();
+        const newValue = todoContent.textContent?.trim() || "";
+
         if (newValue.length >= 5 && newValue.length <= 100) {
-          const todoId = todoElement.id;
+          const todoId = Number(todoElement.id);
           updateTodoDescription(todoId, newValue);
-          iconCheck.classList.remove("fa-check");
-          iconCheck.classList.add("fa-pen");
-          todoContent.contentEditable = false;
+
+          if (iconCheck) {
+            iconCheck.classList.remove("fa-check");
+            iconCheck.classList.add("fa-pen");
+          }
+
+          todoContent.contentEditable = "false";
           todoContent.classList.remove("editing");
         } else if (newValue.length < 5) {
           alert("Todo must be at least 5 characters long!");
@@ -250,11 +291,11 @@ async function getTodos() {
     console.log("Mock API Response:", mockTodos);
     createTodosinView(mockTodos);
   } catch (error) {
-    console.log("Get todos error:", error.message);
+    console.log("Get todos error:", (error as Error).message);
   }
 }
 
-async function createTodo(description) {
+async function createTodo(description: string) {
   try {
     await mockDelay();
 
@@ -267,12 +308,12 @@ async function createTodo(description) {
     mockTodos.push(newTodo);
     getTodos(); // Refresh the view
   } catch (error) {
-    console.log("Create todo error:", error.message);
+    console.log("Create todo error:", (error as Error).message);
   }
 }
 
 // Mock updateStatusTodo function
-async function updateStatusTodo(todoId, newStatus) {
+async function updateStatusTodo(todoId: number, newStatus: boolean) {
   try {
     await mockDelay();
 
@@ -281,13 +322,19 @@ async function updateStatusTodo(todoId, newStatus) {
       mockTodos[todoIndex].done = newStatus;
       const updatedTodo = mockTodos[todoIndex];
 
-      const todoElement = document.getElementById(todoId);
+      const todoElement = document.getElementById(todoId.toString());
       if (todoElement) {
-        const statusIcon = todoElement.querySelector(".fa");
-        statusIcon.classList.remove("fa-circle-check", "fa-stop-circle");
-        statusIcon.classList.add(
-          updatedTodo.done ? "fa-circle-check" : "fa-stop-circle"
-        );
+        const statusIcon = todoElement.querySelector(
+          ".fa"
+        ) as HTMLElement | null;
+
+        if (statusIcon) {
+          statusIcon.classList.remove("fa-circle-check", "fa-stop-circle");
+          statusIcon.classList.add(
+            updatedTodo.done ? "fa-circle-check" : "fa-stop-circle"
+          );
+        }
+
         if (updatedTodo.done) {
           todoElement.classList.add("task-completed");
           showToast();
@@ -296,31 +343,31 @@ async function updateStatusTodo(todoId, newStatus) {
         }
       }
     }
-  } catch (error) {
-    console.log("Status update error:", error.message);
+  } catch (error: any) {
+    console.log("Status update error:", error?.message ?? error);
   }
 }
 
 // Mock deleteTodo function
-async function deleteTodo(todoId) {
+async function deleteTodo(todoId: number) {
   try {
     await mockDelay();
 
     const todoIndex = mockTodos.findIndex((todo) => todo.id == todoId);
     if (todoIndex !== -1) {
       mockTodos.splice(todoIndex, 1);
-      const todoElement = document.getElementById(todoId);
+      const todoElement = document.getElementById(todoId.toString());
       if (todoElement) {
         todoElement.remove();
       }
     }
   } catch (error) {
-    console.log("Delete todo error:", error.message);
+    console.log("Delete todo error:", (error as Error).message);
   }
 }
 
 // Mock updateTodoDescription function
-async function updateTodoDescription(todoId, newDescription) {
+async function updateTodoDescription(todoId: number, newDescription: string) {
   try {
     await mockDelay();
 
@@ -329,11 +376,11 @@ async function updateTodoDescription(todoId, newDescription) {
       mockTodos[todoIndex].description = newDescription;
     }
   } catch (error) {
-    console.log("Update description error:", error.message);
+    console.log("Update description error:", (error as Error).message);
   }
 }
 
-function createTodosinView(todos) {
+function createTodosinView(todos: Todo[]) {
   listOfTodo$.innerHTML = "";
   todos.forEach((todo) => {
     const todoElement = createTodoTemplate(todo);
@@ -346,7 +393,7 @@ function createTodosinView(todos) {
 let activeFilterBtn = btnFilterAll$;
 let btnFilterValue = "all";
 
-function toggleFilterButton(clickedBtn) {
+function toggleFilterButton(clickedBtn: HTMLButtonElement) {
   activeFilterBtn.classList.remove("btn-filter-active");
   clickedBtn.classList.add("btn-filter-active");
   activeFilterBtn = clickedBtn;
@@ -398,8 +445,11 @@ btnFilterDone$.addEventListener("click", () => {
 });
 
 function showToast() {
-  const toast = document.querySelector(".toast");
+  const toast = document.querySelector(".toast") as HTMLElement | null;
+  if (!toast) return;
+
   toast.classList.add("show-toast");
+
   setTimeout(() => {
     toast.classList.remove("show-toast");
   }, 2000);
